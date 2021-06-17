@@ -1,4 +1,4 @@
-Wordpress Website 
+WORDPRESS WEBSITE
 
 #Install Wordpress, MySQL, NGINX :
 
