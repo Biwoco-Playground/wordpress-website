@@ -5,6 +5,7 @@ WORDPRESS WEBSITE
 Run code: <code>docker-compose up</code>
 
 Folder:
-- app/html: Folder code of Wordpress
-- app/mysql: Folder database of MySQL
+- app/html: folder code of wordpress
+- app/mysql: folder database of MySQL
 - nginx-conf: include the config file of NGINX
+- database: folder database of wordpress
