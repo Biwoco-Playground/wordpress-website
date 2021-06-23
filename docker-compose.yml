@@ -13,6 +13,18 @@ services:
       - 3306:3306
     volumes:
       - ./app/mysql:/var/lib/mysql
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    ports:
+     - "8080:80"
+    environment:
+      MYSQL_ROOT_PASSWORD: mypassword #(Required) set the password for the root superuser account.
+      PMA_HOST: db   # define the address/hostname of the mysql server eg mysql container name.
+      PMA_USER: root # this is the root user to login on startup
+      PMA_PASSWORD: wordpress # use the root password to login on startup.
+      # Create a new user on startup (optional)
+      # MYSQL_USER: newuser
+      # MYSQL_PASSWORD: mypassword
   wordpress:
     image: wordpress:5-fpm-alpine
     container_name: wp-60sec-fpm
@@ -25,7 +37,6 @@ services:
       WORDPRESS_DB_NAME: wordpress
       WORDPRESS_DB_USER: wordpress
       WORDPRESS_DB_PASSWORD: wordpress
-  
   nginx:
     image: nginx:alpine
     container_name: wp-60sec-nginx
