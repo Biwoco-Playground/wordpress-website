@@ -1,5 +1,4 @@
 # Wordpress-website for developing wordpress plugin
-Wordpress website Initial
 
 System Requiredment:
 - Wordpress 5.7
