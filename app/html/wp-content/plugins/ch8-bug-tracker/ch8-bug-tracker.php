@@ -18,6 +18,13 @@ add_action('admin_init', 'ch8bt_admin_init');
 add_action('admin_post_delete_ch8bt_bug', 'delete_ch8bt_bug');
 add_shortcode('bug-tracker-list', 'ch8bt_shortcode_list');
 add_action('admin_post_import_ch8bt_bug', 'import_ch8bt_bug');
+add_action('wp_head', 'ch8bt_declare_ajaxurl');
+add_action('wp_ajax_ch8bt_buglist_ajax', 'ch8bt_buglist_ajax');
+add_action(
+    'wp_ajax_nopriv_ch8bt_buglist_ajax',
+    'ch8bt_buglist_ajax'
+);
+add_action('wp_enqueue_scripts', 'ch8bt_load_jquery');
 
 function ch8bt_activation()
 {
@@ -339,12 +346,13 @@ function ch8bt_shortcode_list()
 
     $bug_query = 'select * from ' . $wpdb->get_blog_prefix();
     $bug_query .= 'ch8_bug_data ';
+    $bug_query .= 'where bug_status = 0 ';
 
     // Add search string in query if present
     if ($search_mode) {
         $search_term = '%' . $search_string . '%';
-        $bug_query .= "where bug_title like '%s' ";
-        $bug_query .= "or bug_description like '%s' ";
+        $bug_query .= "and ( bug_title like '%s' ";
+        $bug_query .= "or bug_description like '%s' ) ";
     } else {
         $search_term = '';
     }
@@ -363,6 +371,10 @@ function ch8bt_shortcode_list()
     $output .= '<input type="submit" value="Search" />';
     $output .= '</div>';
     $output .= '</form></div>';
+
+    $output .= '<div class="show_closed_bugs">';
+    $output .= 'Show closed bugs';
+    $output .= '</div>';
 
     $output .= '<div class="bug-tracker-list"><table>';
     // Check if any bugs were found
@@ -387,6 +399,34 @@ function ch8bt_shortcode_list()
     }
     $output .= '</table></div>';
     // Return data prepared to replace shortcode on page/post
+
+    $output .= "<script type='text/javascript'>";
+    $nonce = wp_create_nonce('ch8bt_ajax');
+    $output .= "function replacecontent( bug_status )" .
+        "{ jQuery.ajax( {" .
+        "
+type: 'POST', url: ajax_url," .
+        "
+data: { action: 'ch8bt_buglist_ajax'," .
+        "
+_ajax_nonce: '" . $nonce . "'," .
+        "
+bug_status: bug_status }," .
+        "
+success: function( data ) {" .
+        "
+jQuery('.bug-tracker-list').html( data );"
+        .
+        "
+}" .
+        "
+});" .
+        "};";
+    $output .= "jQuery( document ).ready( function() {";
+    $output .= "jQuery('.show_closed_bugs').click( function()
+{ replacecontent( 1 ); } ";
+    $output .= ")});";
+    $output .= "</script>";
     return $output;
 }
 
@@ -436,4 +476,69 @@ function import_ch8bt_bug()
         admin_url('options-general.php')
     ));
     exit;
+}
+
+function ch8bt_declare_ajaxurl()
+{ ?>
+    <script type="text/javascript">
+        var ajax_url =
+            '<?php echo admin_url('admin-ajax.php'); ?>';
+    </script>
+<?php }
+
+function ch8bt_buglist_ajax()
+{
+    check_ajax_referer('ch8bt_ajax');
+    if (
+        isset($_POST['bug_status']) &&
+        is_numeric($_POST['bug_status'])
+    ) {
+        global $wpdb;
+        // Prepare
+        $bug_query  = 'select * from ' . $wpdb->get_blog_prefix();
+        $bug_query .= 'ch8_bug_data where bug_status = ';
+        $bug_query .= intval($_POST['bug_status']);
+        $bug_query .= ' ORDER by bug_id DESC';
+        $bug_items = $wpdb->get_results(
+            $wpdb->prepare($bug_query),
+            ARRAY_A
+        );
+        // Prepare output to be returned to AJAX requestor
+        $output = '<div class="bug-tracker-list"><table>';
+        // Check if any bugs were found
+        if ($bug_items) {
+            $output .= '<tr><th style="width: 80px">ID</th>';
+            $output .= '<th style="width: 300px">';
+            $output .= 'Title / Desc</th><th>Version</th></tr>';
+            // Create row in table for each bug
+            foreach ($bug_items as $bug_item) {
+                $output .= '<tr style="background: #FFF">';
+                $output .= '<td>' . $bug_item['bug_id'] . '</td>';
+                $output .= '<td>' . $bug_item['bug_title'];
+                $output .= '</td><td>' . $bug_item['bug_version'];
+                $output .= '</td></tr>';
+                $output .= '<tr><td></td><td colspan="2">';
+                $output .= $bug_item['bug_description'];
+                $output .= '</td></tr>';
+            }
+        } else {
+            // Message displayed if no bugs are found
+            $output .= '<tr style="background: #FFF">';
+            $output .= '<td colspan="3">No Bugs to Display</td>';
+        }
+        $output .= '</table></div><br />';
+        echo $output;
+    }
+    die();
+}
+
+function ch8bt_load_jquery()
+{
+    wp_enqueue_script('jquery');
+    wp_enqueue_style(
+        'bug_tracker_css',
+        plugins_url('stylesheet.css', __FILE__),
+        array(),
+        '1.0'
+    );
 }
