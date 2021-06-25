@@ -1,0 +1,1 @@
+{"request":{"hurl":"http:\/\/localhost:8085\/wp-content\/plugins\/ch8-bug-tracker\/stylesheet.css","inline":"","enable_minification":true,"type":"css","handle":"bug_tracker_css"},"log":{"url":"\/wp-content\/plugins\/ch8-bug-tracker\/stylesheet.css","success":true},"code":".show_closed_bugs{cursor:pointer;color:#00c}","status":true}
