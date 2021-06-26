@@ -14,21 +14,19 @@ add_shortcode("crawl_hacker_new", "crawl_hacker_new");
 
 function crawl_hacker_new()
 {
-    $curl = curl_init('https://hacker-news.firebaseio.com/v0/newstories.json?print=pretty');
+    $result = wp_remote_get( "https://hacker-news.firebaseio.com/v0/newstories.json?print=pretty", array(
+        "headers" => array(
+            "Content-Type" => "application/json",
+            "Accept" => "application/json",
+            "cache-control" => "no-cache"
+        )
+    ) );
 
-    curl_setopt($curl, CURLOPT_HTTPGET, true);
+    if( is_wp_error( $result ) ) {
+        return; // Bail early
+    }
 
-    curl_setopt($curl, CURLOPT_HTTPHEADER, array(
-        'Content-Type: application/json',
-        'Accept: application/json',
-        "cache-control: no-cache"
-    ));
-    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($curl, CURLOPT_ENCODING, 'gzip');
-    $result = curl_exec($curl);
-    curl_close($curl);
-
-    $newsArr = json_decode($result, true);
+    $newsArr = json_decode($result["body"], true);
 
     $output = "";
 
@@ -48,28 +46,27 @@ function crawl_hacker_new()
     $output .= "</table>";
 
     return $output;
+
+    // return print_r($newsArr);
 }
 
 
 
 function getNew($id)
 {
-    $curl = curl_init('https://hacker-news.firebaseio.com/v0/item/' . $id . '.json?print=pretty');
+    $result = wp_remote_get( "https://hacker-news.firebaseio.com/v0/item/" . $id . ".json?print=pretty", array(
+        "headers" => array(
+            "Content-Type" => "application/json",
+            "Accept" => "application/json",
+            "cache-control" => "no-cache"
+        )
+    ) );
 
-    curl_setopt($curl, CURLOPT_HTTPGET, true);
-    curl_setopt($curl, CURLOPT_HTTPHEADER, array(
-        'Content-Type: application/json',
-        'Accept: application/json',
-        "cache-control: no-cache"
-    ));
-    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($curl, CURLOPT_ENCODING, 'gzip');
+    if( is_wp_error( $result ) ) {
+        return; // Bail early
+    }
 
-    $result = curl_exec($curl);
-
-    curl_close($curl);
-
-    $newObj = json_decode($result, true);
+    $newObj = json_decode($result["body"], true);
 
     $output =  "<tr>";
     $output .= "<td>{$newObj["id"]}</td>";
